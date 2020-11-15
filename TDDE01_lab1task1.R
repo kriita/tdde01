@@ -1,7 +1,7 @@
 library(kknn)
 
 # Import data from excel file. (1c:21)
-data = read.csv("./upg1_data/optdigits.csv", header = FALSE)
+data = read.csv("upg1_data/optdigits.csv", header = FALSE)
 
 # 1. Divide data into training (50%), validation (25%) and test (25%) sets. (1e:20)
 n = nrow(data)[1]
