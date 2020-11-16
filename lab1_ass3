@@ -7,7 +7,7 @@ par(mfrow = c(1,2))
 
 # Divide data randomly into train and test
 tecator = read.csv("tecator.csv", header=TRUE)
-x <- tecator[,-c(1, 102, 103)]
+x <- tecator[,-c(1, 103, 104)]
 n = dim(x)[1]
 id = sample(1:n, floor(n*0.5))
 
@@ -22,9 +22,7 @@ test = x[-id,]
 # therefore on the quality of model.
 ## X(X^tX)^-1X^t
 M1 = lm(data = train[,-c(101)])
-M2 = lm(data = test[,-c(101)])
 M1_fit = predict.lm(M1, newdata = train[,-c(101)])
-M2_fit = predict.lm(M2, newdata = test[,-c(101)])
 
 MSE = function(real, pred) {
   sqErr = (real - pred)^2
@@ -33,8 +31,7 @@ MSE = function(real, pred) {
   return(sum_sqErr/N)
 }
 
-mse_train = MSE(train$Fat, M1_fit)
-mse_test = MSE(test$Fat, M2_fit)
+mse_train = MSE(test[,-c(101)], M1_fit)
 
 ## Task 2
 # Assume now that Fat can be modeled as a LASSO regression in which all
@@ -56,10 +53,9 @@ resp = scale(train$Fat)
 predLasso = glmnet(as.matrix(obs), resp, alpha = 1, family = "gaussian")
 plot(predLasso, xvar = "lambda", label = TRUE)
 
-
-obs3 = scale(train[,98:100])
+obs3 = scale(train[,1:3])
 predLasso3 = glmnet(as.matrix(obs3), resp, alpha = 1, family = "gaussian")
-plot(predLasso3, xvar = "lambda", label = TRUE) 
+opt_lasso3 <- min(predLasso3$lambda)
 
 ## Task 4
 # Present a plot of how degrees of freedom depend on the penalty parameter.
@@ -71,8 +67,9 @@ plot(predLasso[["lambda"]], predLasso[["df"]])
 # plots from steps 3 and 5. Conclusions?
 predRidge = glmnet(as.matrix(obs), resp, alpha = 0, family = "gaussian") 
 plot(predRidge, xvar = "lambda", label = TRUE)
+
 predRidge3 = glmnet(as.matrix(obs3), resp, alpha = 0, family = "gaussian")
-plot(predRidge3, xvar = "lambda", label = TRUE)
+opt_Ridge3 <- min(predRidge3$lambda)
 
 ## Task 6
 # Use cross-validation to compute the optimal LASSO model. Present a plot
@@ -87,7 +84,7 @@ plot(lasso_mfit_cv, xvar = "lamdba", label = TRUE)
 opt_lasso <- lasso_mfit_cv$lambda.min
 c = coef(lasso_mfit_cv, s="lambda.min")
 
-plot(M1_fit, train$Fat)
+plot(M1_fit, train$Fat, col = c("green", "blue"))
 
 ## Task 7
 # Use the feature values from test data (the portion of test data with Channel
@@ -95,9 +92,10 @@ plot(M1_fit, train$Fat)
 # values. (Hint: use rnorm() and compute sigma as standard deviation of residuals
 # from train data predictions). Make a scatter plot of original Fat in test data
 # versus newly generated ones. Comment on the quality of the data generation.
-M = mean(M2_fit)
-SD = sd(M2_fit)
-blah1 = M + rnorm(M2_fit)
-blah2 = SD + rnorm(M2_fit)
-plot(blah1)
-plot(blah2)
+SD1 = sd(M1_fit)
+SD2 = sd(M2_fit)
+blah1 = SD1 + rnorm(M1_fit)
+blah2 = SD2 + rnorm(M2_fit)
+generatedFat = c(blah1, blah2)
+originalFat = tecator$Fat
+plot(generatedFat, originalFat, col = c("red", "blue"))
