@@ -1,0 +1,103 @@
+require(ggplot2)
+require(matlib)
+require(glmnet)
+
+set.seed(12345)
+par(mfrow = c(1,2))
+
+# Divide data randomly into train and test
+tecator = read.csv("tecator.csv", header=TRUE)
+x <- tecator[,-c(1, 102, 103)]
+n = dim(x)[1]
+id = sample(1:n, floor(n*0.5))
+
+train = x[id,]
+test = x[-id,]
+
+## Task 1
+# Assume that Fat can be modeled as a linear regression in which absorbance
+# characteristics (Channels) are used as features. Report the underlying
+# probabilistic model, fit the linear regression to the training data and estimate
+# the training and test errors. Comment on the quality of fit and prediction and
+# therefore on the quality of model.
+## X(X^tX)^-1X^t
+M1 = lm(data = train[,-c(101)])
+M2 = lm(data = test[,-c(101)])
+M1_fit = predict.lm(M1, newdata = train[,-c(101)])
+M2_fit = predict.lm(M2, newdata = test[,-c(101)])
+
+MSE = function(real, pred) {
+  sqErr = (real - pred)^2
+  sum_sqErr = sum(sqErr)
+  N = length(sqErr)
+  return(sum_sqErr/N)
+}
+
+mse_train = MSE(train$Fat, M1_fit)
+mse_test = MSE(test$Fat, M2_fit)
+
+## Task 2
+# Assume now that Fat can be modeled as a LASSO regression in which all
+# Channels are used as features. Report the objective function that should be
+# optimized in this scenario.
+## min{-loglikelihood + lambda * ||w||}
+## loglikelihood = log[prod p(Y|X, w)]
+## min{-sum log[p(Y|X, w)] + lambda * ||w||}
+## ||w|| linear
+## Y, X ??
+
+## Task 3
+# Fit the LASSO regression model to the training data. Present a plot
+# illustrating how the regression coefficients depend on the log of penalty
+# factor log(lambda) and interpret this plot. What value of the penalty factor can be
+# chosen if we want to select a model with only three features?
+obs = scale(train[,1:100])
+resp = scale(train$Fat)
+predLasso = glmnet(as.matrix(obs), resp, alpha = 1, family = "gaussian")
+plot(predLasso, xvar = "lambda", label = TRUE)
+
+
+obs3 = scale(train[,98:100])
+predLasso3 = glmnet(as.matrix(obs3), resp, alpha = 1, family = "gaussian")
+plot(predLasso3, xvar = "lambda", label = TRUE) 
+
+## Task 4
+# Present a plot of how degrees of freedom depend on the penalty parameter.
+# Is the observed trend expected?
+plot(predLasso[["lambda"]], predLasso[["df"]])
+
+## Task 5
+# Repeat step 3 but fit Ridge instead of the LASSO regression and compare the
+# plots from steps 3 and 5. Conclusions?
+predRidge = glmnet(as.matrix(obs), resp, alpha = 0, family = "gaussian") 
+plot(predRidge, xvar = "lambda", label = TRUE)
+predRidge3 = glmnet(as.matrix(obs3), resp, alpha = 0, family = "gaussian")
+plot(predRidge3, xvar = "lambda", label = TRUE)
+
+## Task 6
+# Use cross-validation to compute the optimal LASSO model. Present a plot
+# showing the dependence of the CV score on log(lambda) and comment how the CV
+# score changes with log(lambda). Report the optimal lambda and how many variables were
+# chosen in this model. Comment whether the selected lambda value is statistically
+# significantly better than log(lambda) = -2. Finally, create a scatter plot of the
+# original test versus predicted test values for the model corresponding to
+# optimal lambda and comment whether the model predictions are good.
+lasso_mfit_cv = cv.glmnet(as.matrix(obs), resp, alpha = 1, family = "gaussian", lambda = seq(0,1,0.01)) 
+plot(lasso_mfit_cv, xvar = "lamdba", label = TRUE)
+opt_lasso <- lasso_mfit_cv$lambda.min
+c = coef(lasso_mfit_cv, s="lambda.min")
+
+plot(M1_fit, train$Fat)
+
+## Task 7
+# Use the feature values from test data (the portion of test data with Channel
+# columns) and the optimal LASSO model from step 6 to generate new target
+# values. (Hint: use rnorm() and compute sigma as standard deviation of residuals
+# from train data predictions). Make a scatter plot of original Fat in test data
+# versus newly generated ones. Comment on the quality of the data generation.
+M = mean(M2_fit)
+SD = sd(M2_fit)
+blah1 = M + rnorm(M2_fit)
+blah2 = SD + rnorm(M2_fit)
+plot(blah1)
+plot(blah2)
