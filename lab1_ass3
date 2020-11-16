@@ -31,7 +31,8 @@ MSE = function(real, pred) {
   return(sum_sqErr/N)
 }
 
-mse_train = MSE(test[,-c(101)], M1_fit)
+mse_train = MSE(train[,-c(101)], M1_fit)
+mse_test = MSE(test[,-c(101)], M1_fit)
 
 ## Task 2
 # Assume now that Fat can be modeled as a LASSO regression in which all
@@ -92,10 +93,7 @@ plot(M1_fit, train$Fat, col = c("green", "blue"))
 # values. (Hint: use rnorm() and compute sigma as standard deviation of residuals
 # from train data predictions). Make a scatter plot of original Fat in test data
 # versus newly generated ones. Comment on the quality of the data generation.
-SD1 = sd(M1_fit)
-SD2 = sd(M2_fit)
+SD1 = sd(M1[["residuals"]])
 blah1 = SD1 + rnorm(M1_fit)
-blah2 = SD2 + rnorm(M2_fit)
-generatedFat = c(blah1, blah2)
-originalFat = tecator$Fat
-plot(generatedFat, originalFat, col = c("red", "blue"))
+originalFat = train$Fat
+plot(blah1, originalFat, col = c("red", "blue"))
