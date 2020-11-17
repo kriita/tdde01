@@ -114,3 +114,11 @@ points(pred, col = "red")
 # values. (Hint: use rnorm() and compute sigma as standard deviation of residuals
 # from train data predictions). Make a scatter plot of original Fat in test data
 # versus newly generated ones. Comment on the quality of the data generation.
+
+predTest = predict(cv_model_lasso, newx = as.matrix(train[,1:100]), s ="lambda.min")
+res = predTest - train$Fat
+sigma = sd(res)
+normDist = rnorm(pred, sd = sigma)
+newGen = normDist + pred
+plot(test$Fat, col = "blue")
+points(newGen, col = "red")
