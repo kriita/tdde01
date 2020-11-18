@@ -7,7 +7,7 @@ par(mfrow = c(1,2))
 
 # Divide data randomly into train and test
 tecator = read.csv("tecator.csv", header=TRUE)
-x <- tecator[,-c(1, 103, 104)]
+x <- tecator[,-c(1, 103, 104)] # remove Sample, Protein and Moisture
 n = dim(x)[1]
 id = sample(1:n, floor(n*0.5))
 
