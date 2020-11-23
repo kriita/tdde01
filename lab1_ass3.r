@@ -3,7 +3,6 @@ require(matlib)
 require(glmnet)
 
 set.seed(12345)
-par(mfrow = c(1,2)) # don't know what this does(?)
 
 # Divide data randomly into train and test
 tecator = read.csv("tecator.csv", header=TRUE)
@@ -65,7 +64,8 @@ mse_test = MSE(test$Fat, M2_fit)
 obs = train[,1:100]
 resp = train$Fat
 predLasso = glmnet(as.matrix(obs), resp, alpha = 1, family = "gaussian")
-plot(predLasso, xvar = "lambda", label = TRUE)
+plot(predLasso, xvar = "lambda", label = TRUE,
+     main = "LASSO regression")
 print(paste("Lambda for three features:",
             predLasso$lambda[22], predLasso$lambda[23], predLasso$lambda[24]))
 
@@ -86,7 +86,8 @@ plot(predLasso$lambda, predLasso$df, type = "l", col = "red",
 # plots from steps 3 and 5. Conclusions?
 
 predRidge = glmnet(as.matrix(obs), resp, alpha = 0, family = "gaussian") 
-plot(predRidge, xvar = "lambda", label = TRUE)
+plot(predRidge, xvar = "lambda", label = TRUE,
+     main = "Ridge regression")
 
 # ------------------------------------------------------------------------------
 
@@ -102,11 +103,12 @@ plot(predRidge, xvar = "lambda", label = TRUE)
 cv_model_lasso = cv.glmnet(as.matrix(obs), resp, family = "gaussian", alpha = 1)
 print(paste("Best lambda:", cv_model_lasso$lambda.min,
             ", no. of variables:", length(cv_model_lasso$nzero)))
-plot(cv_model_lasso)
-c = coef(cv_model_lasso, s = "lambda.min")
+plot(cv_model_lasso, main = "Cross-validation for LASSO")
+coef(cv_model_lasso, s = "lambda.min")
 
 pred = predict(cv_model_lasso, newx = as.matrix(test[,1:100]), s ="lambda.min")
-plot(test$Fat, col = "blue")
+plot(test$Fat, col = "blue", xlab = "Sample", ylab = "Value of fat",
+     main = "Original test vs Predicted test")
 points(pred, col = "red")
 
 # ------------------------------------------------------------------------------
@@ -123,5 +125,6 @@ res = predTest - train$Fat
 sigma = sd(res)
 normDist = rnorm(pred, sd = sigma)
 newGen = normDist + pred
-plot(test$Fat, col = "blue")
+plot(test$Fat, col = "blue", xlab = "Sample", ylab = "Value of fat",
+     main = "Original test vs Generated test")
 points(newGen, col = "red")
