@@ -3,16 +3,18 @@ require(matlib)
 require(glmnet)
 
 set.seed(12345)
-par(mfrow = c(1,2))
+par(mfrow = c(1,2)) # don't know what this does(?)
 
 # Divide data randomly into train and test
 tecator = read.csv("tecator.csv", header=TRUE)
-x <- tecator[,-c(1, 103, 104)] # remove Sample, Protein and Moisture
+x <- tecator[,-c(1, 103, 104)] # remove sample, protein and moisture
 n = dim(x)[1]
 id = sample(1:n, floor(n*0.5))
 
 train = x[id,]
 test = x[-id,]
+
+# channel1 is column 1 in x, and channel101 in x is Fat
 
 # ------------------------------------------------------------------------------
 
@@ -25,8 +27,10 @@ test = x[-id,]
 
 ## X(X^tX)^-1X^t
 
-M1 = lm(data = train[,-c(101)])
-M1_fit = predict.lm(M1, newdata = train[,-c(101)])
+M1 = lm(Fat~., data = train)
+M1_fit = predict.lm(M1, newdata = train)
+M2 = lm(Fat~., data = test)
+M2_fit = predict.lm(M2, newdata = test)
 
 MSE = function(real, pred) {
   sqErr = (real - pred)^2
@@ -35,8 +39,8 @@ MSE = function(real, pred) {
   return(sum_sqErr/N)
 }
 
-mse_train = MSE(train[,-c(101)], M1_fit)
-mse_test = MSE(test[,-c(101)], M1_fit)
+mse_train = MSE(train$Fat, M1_fit)
+mse_test = MSE(test$Fat, M2_fit)
 
 # ------------------------------------------------------------------------------
 
