@@ -29,8 +29,7 @@ test = x[-id,]
 
 M1 = lm(Fat~., data = train)
 M1_fit = predict.lm(M1, newdata = train)
-M2 = lm(Fat~., data = test)
-M2_fit = predict.lm(M2, newdata = test)
+M2_fit = predict.lm(M1, newdata = test)
 
 MSE = function(real, pred) {
   sqErr = (real - pred)^2
