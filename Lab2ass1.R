@@ -12,13 +12,21 @@ set.seed(12345)
 # colored by Species. Do you think that this data is easy to classify by linear
 # discriminant analysis? Motivate your answer
 
-plot(iris$Sepal.Width, iris$Sepal.Length, pch = 21,
-     bg=c("blue","red","green")[unclass(iris$Species)],
-     xlab = "Sepal width", ylab = "Sepal length")
-legend("topleft", legend = c("Setosa", "Versicolor", "Virginica"),
-       col = c("blue", "red", "green"), lty = 1, lwd = 3)
+# take out only interesting data
+# x = (length width)
+sepal = iris[,-c(3, 4, 5)]
+setosa = sepal[1:50,]
+versicolor = sepal[51:100,]
+virginica = sepal[101:150,]
 
-# Blue is easy to classify but red and green are very mixed, so it is not easy
+plot(setosa[, 1], setosa[, 2], col = "blue", pch = 21,
+     xlim = c(4.3, 7.9), ylim = c(1.8, 4.7), bg = "blue",
+     main = "Sepal length vs Sepal width", xlab = "Length", ylab = "Width")
+points(versicolor[, 1], versicolor[, 2], col = "red", pch = 21, bg = "red")
+points(virginica[, 1], virginica[, 2], col = "green", pch = 21, bg = "green")
+legend("topleft", title = "Original",
+       legend = c("Setosa", "Versicolor", "Virginica"),
+       col = c("blue", "red", "green"), lty = 1, lwd = 3)
 
 # ------------------------------------------------------------------------------
 
@@ -37,17 +45,11 @@ legend("topleft", legend = c("Setosa", "Versicolor", "Virginica"),
 # Do estimated covariance matrices seem to fulfill LDA assumptions?
 
 # a)
-sepal = iris[,-c(3, 4, 5)]
-setosa = sepal[1:50,]
-versicolor = sepal[51:100,]
-virginica = sepal[101:150,]
-
-mean_width_setosa = mean(setosa$Sepal.Width)
-mean_length_setosa = mean(setosa$Sepal.Length)
-mean_width_versicolor = mean(versicolor$Sepal.Width)
-mean_length_versicolor = mean(versicolor$Sepal.Length)
-mean_width_virginica = mean(virginica$Sepal.Width)
-mean_length_virginica = mean(virginica$Sepal.Length)
+# mean_k = (length, width)
+mean_tot = as.matrix(c(mean(sepal[, 1]), mean(sepal[, 2])))
+mean_setosa = as.matrix(c(mean(setosa[, 1]), mean(setosa[, 2])))
+mean_versicolor = as.matrix(c(mean(versicolor[, 1]), mean(versicolor[, 2])))
+mean_virginica = as.matrix(c(mean(virginica[, 1]), mean(virginica[, 2])))
 
 priorProb = 50/150 # 50 of each species, three different species and 150 samples
 
@@ -59,46 +61,26 @@ cov_virginica = cov(virginica)
 # b)
 pooledCov = priorProb * (cov_setosa + cov_versicolor + cov_virginica)
 
-# c)
-# p(Y = C_i | X) = exp(w_i^T * x) / sum_j=1^K exp(w_j^T * x)
-# w_0i = -1/2 * mu_i^T * sigma^-1 * mu_i + log(pi_i)
-# w_i = sigma^-1 * mu_i
-
 # d)
 # delta_k = x^T * w_k + w_0k
-mean_setosa = as.matrix(c(mean_length_setosa, mean_width_setosa))
-mean_versicolor = as.matrix(c(mean_length_versicolor, mean_width_versicolor))
-mean_virginica = as.matrix(c(mean_length_virginica, mean_width_virginica))
-
+w_tot = inv(cov_tot) %*% mean_tot
 w_setosa = inv(cov_setosa) %*% mean_setosa
 w_versicolor = inv(cov_versicolor) %*% mean_versicolor
 w_virginica = inv(cov_virginica) %*% mean_virginica
 
+w0_tot = -1/2 * t(mean_tot) %*% w_tot + log(1)
 w0_setosa = -1/2 * t(mean_setosa) %*% w_setosa + log(priorProb)
 w0_versicolor = -1/2 * t(mean_versicolor) %*% w_versicolor + log(priorProb)
 w0_virginica = -1/2 * t(mean_virginica) %*% w_virginica + log(priorProb)
 
-discr_setosa = as.matrix(sepal) %*% w_setosa + c(w0_setosa)
-discr_versicolor = as.matrix(sepal) %*% w_versicolor + c(w0_versicolor)
-discr_virginica = as.matrix(sepal) %*% w_virginica + c(w0_virginica)
+discriminant = function(data, w, w0){
+  as.matrix(data) %*% w - c(w0)
+}
 
-pred_discr_setosa = max(discr_setosa)
-pred_discr_versicolor = max(discr_versicolor)
-pred_discr_virginica = max(discr_virginica)
-
-## mean_tot = c(mean(iris$Sepal.Length), mean(iris$Sepal.Width))
-## w_tot = inv(cov(sepal)) %*% mean_tot
-## w0_tot = 1/2 * t(mean_tot) %*% w_tot + log(1)
-## discr_tot = as.matrix(sepal) %*% w_tot - c(w0_tot)
-
-# e)
-# w_1 * x + w_01 = w_2 * x + w_02
-# w_1 * x + w_01 = w_3 * x + w_03
-# w_2 * x + w_02 = w_3 * x + w_03
-# x = (length, width)
-
-# Assumption: same covariance for each class(?)
-# sort of
+discr_tot = max(discriminant(sepal, w_tot, w0_tot))
+discr_setosa = max(discriminant(setosa, w_setosa, w0_setosa))
+discr_versicolor = max(discriminant(versicolor, w_versicolor, w0_versicolor))
+discr_virginica = max(discriminant(virginica, w_virginica, w0_virginica))
 
 # ------------------------------------------------------------------------------
 
@@ -106,26 +88,31 @@ pred_discr_virginica = max(discr_virginica)
 # Use discriminant functions from step 2 to predict the species from the original
 # data and make a scatterplot of Sepal Length versus Sepal Width in which color
 # shows the predicted Species. Estimate the misclassification rate of the prediction.
-# Comment on the quality of classification. Afterwards, perform the LDA analysis
-# with lda() function and investigate whether you obtain the same test error by
-# using this package. Should it be same?
+# Comment on the quality of classification.
+# Afterwards, perform the LDA analysis with lda() function and investigate
+# whether you obtain the same test error by using this package.
+# Should it be same?
 
-pred_species = 
-
-plot(pred_species$Sepal.Length, pred_species$Sepal.Width, pch = 21,
-     bg=c("blue","red","green")[unclass(pred_species$Species)],
-     xlab = "Sepal width", ylab = "Sepal length")
-legend("topleft", title = "Predicted species",
+#pred_setosa = 
+#pred_versicolor = 
+#pred_versicolor = 
+  
+plot(pred_setosa[, 1], pred_setosa[, 2], col = "blue", pch = 21,
+     xlim = c(4.3, 7.9), ylim = c(1.7, 5), bg = "blue",
+     main = "Sepal length vs Sepal width", xlab = "Length", ylab = "Width")
+points(pred_versicolor[, 1], pred_versicolor[, 2],
+       col = "red", pch = 21, bg = "red")
+points(pred_virginica[, 1], pred_virginica[, 2],
+       col = "green", pch = 21, bg = "green")
+legend("topleft", title = "Predicted",
        legend = c("Setosa", "Versicolor", "Virginica"),
        col = c("blue", "red", "green"), lty = 1, lwd = 3)
 
-tab = table(pred_species, iris$Species)
-missclass_species = 1 - sum(diag(tab)) / length(pred_species)
+#misclass_lda = 
 
-LDA = lda(Species~Sepal.Length+Sepal.Width, data = iris)
+LDA = lda(Species ~ Sepal.Length + Sepal.Width, data = iris)
 print(LDA)
-
-# It should be the same, which it also is(?)
+plot(LDA)
 
 # ------------------------------------------------------------------------------
 
@@ -136,22 +123,17 @@ print(LDA)
 # new data and compare it with the plots for the original and the predicted data.
 # Conclusions?
 
-species = sample(iris$Species, size = 150)
-gen_setosa = data.matrix(rmvnorm(n = 50,
-                                 mean = c(mean_length_setosa, mean_width_setosa),
-                                 sigma = cov_setosa))
-gen_versicolor = data.matrix(rmvnorm(n = 50,
-                                     mean = c(mean_length_versicolor, mean_width_versicolor),
-                                     sigma = cov_versicolor))
-gen_virginica = data.matrix(rmvnorm(n = 50,
-                                    mean = c(mean_length_virginica, mean_width_virginica),
-                                    sigma = cov_virginica))
-generated = rbind(gen_setosa, gen_versicolor, gen_virginica)
+new_setosa = rmvnorm(n = 50, mean = mean_setosa, sigma = cov_setosa)
+new_versicolor = rmvnorm(n = 50, mean = mean_versicolor, sigma = cov_versicolor)
+new_virginica = rmvnorm(n = 50, mean = mean_virginica, sigma = cov_virginica)
 
-plot(generated[, 1], generated[, 2], pch = 21,
-     bg=c("blue","red","green")[unclass(species)],
-     xlab = "Sepal width", ylab = "Sepal length")
-legend("topleft", legend = c("Setosa", "Versicolor", "Virginica"),
+plot(new_setosa[, 1], new_setosa[, 2], col = "blue", pch = 21,
+     xlim = c(4.3, 7.9), ylim = c(1.7, 5), bg = "blue",
+     main = "Sepal length vs Sepal width", xlab = "Length", ylab = "Width")
+points(new_versicolor[, 1], new_versicolor[, 2], col = "red", pch = 21, bg = "red")
+points(new_virginica[, 1], new_virginica[, 2], col = "green", pch = 21, bg = "green")
+legend("topleft", title = "Generated",
+       legend = c("Setosa", "Versicolor", "Virginica"),
        col = c("blue", "red", "green"), lty = 1, lwd = 3)
 
 # ------------------------------------------------------------------------------
@@ -161,5 +143,6 @@ legend("topleft", legend = c("Setosa", "Versicolor", "Virginica"),
 # multinom() from nnet package), plot the classified data and compute the
 # misclassification error. Compare these results with the LDA results.
 
-log_reg = multinom(Species ~ Sepal.Length + Sepal.Width, newdata = iris)
-plot(log_reg)
+log_reg = multinom(Species ~ Sepal.Length + Sepal.Width, data = iris)
+#plot()
+#misclass_log_reg = 
