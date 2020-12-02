@@ -68,10 +68,10 @@ pooledCov = priorProb * (cov_setosa + cov_versicolor + cov_virginica)
 # d)
 # delta_k = x^T * w_k + w_0k
 # ett w per x i data?
-w_tot = inv(cov_tot) %*% mean_tot
-w_setosa = inv(cov_setosa) %*% mean_setosa
-w_versicolor = inv(cov_versicolor) %*% mean_versicolor
-w_virginica = inv(cov_virginica) %*% mean_virginica
+w_tot = as.matrix(inv(cov_tot) %*% mean_tot)
+w_setosa = as.matrix(inv(cov_setosa) %*% mean_setosa)
+w_versicolor = as.matrix(inv(cov_versicolor) %*% mean_versicolor)
+w_virginica = as.matrix(inv(cov_virginica) %*% mean_virginica)
 
 w0_tot = -1/2 * t(mean_tot) %*% w_tot + log(1)
 w0_setosa = -1/2 * t(mean_setosa) %*% w_setosa + log(priorProb)
@@ -89,13 +89,13 @@ discr_versicolor = max(discriminant(versicolor, w_versicolor, w0_versicolor))
 discr_virginica = max(discriminant(virginica, w_virginica, w0_virginica))
 
 # e)
-# hur blir detta en linje?
+# hur blir detta en användbar linje?
 # w_1 * x + w_01 = w_2 * x + w_02
 # w_1 * x + w_01 = w_3 * x + w_03
 # w_2 * x + w_02 = w_3 * x + w_03
 # x = (length, width)
 
-abline(lm(Sepal.Width ~ Sepal.Length, data = iris$Species))
+abline(lm(Sepal.Width ~ Sepal.Length, data = iris$Species)) # ???
 
 # ------------------------------------------------------------------------------
 
