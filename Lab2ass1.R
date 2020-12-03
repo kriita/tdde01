@@ -1,3 +1,5 @@
+# ------------------------------------------------------------------------------
+
 require(ggplot2)
 require(MASS)
 require(matlib)
@@ -5,7 +7,11 @@ require(glmnet)
 require(mvtnorm)
 require(nnet)
 
-attach(iris) # put the iris data in your current work directory
+set.seed(12345)
+# put the iris data in your current work directory
+attach(iris)
+
+# ------------------------------------------------------------------------------
 
 ## Task 1
 # Make a scatterplot of Sepal Width versus Sepal Length where observations are
@@ -52,7 +58,7 @@ cov_versicolor = cov(versicolor)
 cov_virginica = cov(virginica)
 
 # b)
-pooledCov = priorProb * (cov_setosa + cov_versicolor + cov_virginica)
+pooled_cov = priorProb * (cov_setosa + cov_versicolor + cov_virginica)
 
 # c)
 # x|y = C_i, mu_i, Sigma ~ N(mu_i, Sigma)
@@ -62,9 +68,9 @@ pooledCov = priorProb * (cov_setosa + cov_versicolor + cov_virginica)
 # w_0i = -1/2 * mu_i^T * Sigma^-1 * mu_i + log(pi_i)
 # w_i = Sigma^-1 * mu_i
 # delta_k = x^T * w_k + w_0k
-w_setosa = as.matrix(inv(pooledCov) %*% mean_setosa)
-w_versicolor = as.matrix(inv(pooledCov) %*% mean_versicolor)
-w_virginica = as.matrix(inv(pooledCov) %*% mean_virginica)
+w_setosa = inv(pooled_cov) %*% mean_setosa
+w_versicolor = inv(pooled_cov) %*% mean_versicolor
+w_virginica = inv(pooled_cov) %*% mean_virginica
 
 w0_setosa = -1/2 * t(mean_setosa) %*% w_setosa + log(priorProb)
 w0_versicolor = -1/2 * t(mean_versicolor) %*% w_versicolor + log(priorProb)
@@ -142,17 +148,26 @@ misclass_lda = 1 - sum(diag(c_tab_lda))/sum(c_tab_lda)
 
 # ------------------------------------------------------------------------------
 
-# HAR EJ ANVÄNT SAMPLE() I TASK 4, VILKET VERKAR VARA ETT KRAV
-
 ## Task 4
 # Use models reported in 2c to generate new data of this kind with the same total
 # number of cases as in the original data (hint: use sample() and rmvnorm() from
 # package mvtnorm). Make a scatterplot of the same kind as in step 1 but for the
 # new data
 
-new_setosa = rmvnorm(n = 50, mean = mean_setosa, sigma = cov_setosa)
-new_versicolor = rmvnorm(n = 50, mean = mean_versicolor, sigma = cov_versicolor)
-new_virginica = rmvnorm(n = 50, mean = mean_virginica, sigma = cov_virginica)
+# make a probability vector with equal weights
+x = rep(1/3, 150)
+sampled_class = sample(x = iris$Species, size = 150, prob = x)
+# see how many of each class were sampled
+no_of_class = table(sampled_class)
+no_setosa = no_of_class[1]
+no_versicolor = no_of_class[2]
+no_virginica = no_of_class[3]
+
+new_setosa = rmvnorm(n = no_setosa, mean = mean_setosa, sigma = cov_setosa)
+new_versicolor = rmvnorm(n = no_versicolor, mean = mean_versicolor,
+                         sigma = cov_versicolor)
+new_virginica = rmvnorm(n = no_virginica, mean = mean_virginica,
+                        sigma = cov_virginica)
 
 iris$gen_length <- c(new_setosa[, 1], new_versicolor[, 1], new_virginica[, 1])
 iris$gen_width <- c(new_setosa[, 2], new_versicolor[, 2], new_virginica[, 2])
