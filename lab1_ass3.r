@@ -107,9 +107,10 @@ plot(cv_model_lasso, main = "Cross-validation for LASSO")
 coef(cv_model_lasso, s = "lambda.min")
 
 pred = predict(cv_model_lasso, newx = as.matrix(test[,1:100]), s ="lambda.min")
-plot(test$Fat, col = "blue", xlab = "Sample", ylab = "Value of fat",
-     main = "Original test vs Predicted test")
-points(pred, col = "red")
+plot(test$Fat, pred, col = c("blue", "red"), pch = 21, bg = c("blue", "red"),
+     xlab = "Original", ylab = "Predicted", main = "Original vs Predicted")
+legend("topleft", legend = c("Original", "Predicted"),
+       col = c("blue", "red"), lty = 1, lwd = 3)
 
 # ------------------------------------------------------------------------------
 
@@ -125,6 +126,7 @@ res = predTest - train$Fat
 sigma = sd(res)
 normDist = rnorm(pred, sd = sigma)
 newGen = normDist + pred
-plot(test$Fat, col = "blue", xlab = "Sample", ylab = "Value of fat",
-     main = "Original test vs Generated test")
-points(newGen, col = "red")
+plot(test$Fat, newGen, col = c("blue", "red"), pch = 21, bg = c("blue", "red"),
+     xlab = "Original", ylab = "Generated", main = "Original vs Generated")
+legend("topleft", legend = c("Original", "Generated"),
+       col = c("blue", "red"), lty = 1, lwd = 3)
