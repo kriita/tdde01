@@ -29,7 +29,7 @@ test = test[,-5]
 # a)
 
 loglikelihood <- function(w,sigma){ #https://www.statlect.com/fundamentals-of-statistics/normal-distribution-maximum-likelihood
-  return(-1/(2*sigma^2)*(sum((train_motor - train%*%w)^2)) - length(train_motor)/2*log(sigma^2))
+  return(-1/(2*sigma^2)*(sum((train_motor - train%*%w)^2)) - length(train_motor)/2*log(sigma^2) - length(train_motor)/2*log(2*pi))
 }
 
 # b)
